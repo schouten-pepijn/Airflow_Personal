@@ -15,13 +15,7 @@ def write_csv():
         ["Alice", 28, "Los Angeles"],
     ]
     
-    file_path = os.path.join(
-        "Users",
-        "pepijnschouten",
-        "Documents",
-        "Airflow_Outputs",
-        "csv_dag.csv"
-    )
+    file_path = "/tmp/write_to_csv_dag.csv"
     
     with open(file_path, "w", newline="") as f:
         writer = csv.writer(f)
