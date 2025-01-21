@@ -1,4 +1,5 @@
 import csv
+import os
 from datetime import datetime
 from airflow import DAG
 from airflow.operators.python import PythonOperator
@@ -14,7 +15,13 @@ def write_csv():
         ["Alice", 28, "Los Angeles"],
     ]
     
-    file_path = "/tmp/to_csv_dag.csv"
+    file_path = os.path.join(
+        "Users",
+        "pepijnschouten",
+        "Documents",
+        "Airflow_Outputs",
+        "csv_dag.csv"
+    )
     
     with open(file_path, "w", newline="") as f:
         writer = csv.writer(f)
