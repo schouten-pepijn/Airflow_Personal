@@ -38,6 +38,7 @@ with DAG(
     schedule=None,  # Manual trigger
     start_date=datetime(2022, 1, 1),
     catchup=False,
+    tags=["Pepijn"]
 ) as dag:
     
     # define the task
