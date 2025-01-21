@@ -1,5 +1,4 @@
 import csv
-import os
 from datetime import datetime
 from airflow import DAG
 from airflow.operators.python import PythonOperator
@@ -20,8 +19,7 @@ def write_csv():
     with open(file_path, "w", newline="") as f:
         writer = csv.writer(f)
         writer.writerows(data)
-    writer.close()
-        
+   
     print(f"csv saved to {file_path}")
     
 
