@@ -5,23 +5,27 @@ from airflow import DAG
 from airflow.operators.python import PythonOperator
 
 # writer function
-def write_csv(data_dict):
+def write_csv(data, **kwargs):
+    
+    # save paths
     dir_path = "/Users/pepijnschouten/Documents/Airflow_Outputs/"
     file_path = dir_path + "editted_write_to_csv_dag.csv"
     
-    field_names = data_dict[0].keys()
-    
+    # write to csv
+    field_names = data[0].keys()
     with open(file_path, "w", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=field_names)
         writer.writeheader()
-        writer.writerows(data_dict)
+        writer.writerows(data)
 
     print(f"csv saved to {file_path}")
 
 # reader function
-def read_csv():
+def read_csv(**kwargs):
+    # file path
     file_path = "/Users/pepijnschouten/Documents/Airflow_Outputs/write_to_csv_dag.csv"
     
+    # read csv or default
     if os.path.exists(file_path):
         with open(file_path, "r", newline="") as f:
             reader = csv.DictReader(f)
@@ -60,13 +64,13 @@ with DAG(
         task_id='read_csv_task',
         python_callable=read_csv,
     )
-    
+
     # write task
     write_csv_task = PythonOperator(
         task_id='write_csv_task',
         python_callable=write_csv,
-        op_args=read_csv_task.output,
+        op_kwargs={"data": read_csv_task.output},  # pass optional arg
     )
-    
+
 # set task dependencies
 read_csv_task >> write_csv_task
