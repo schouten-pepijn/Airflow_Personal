@@ -46,7 +46,7 @@ default_args = {
 
 # instantiate DAG
 with DAG(
-    "write_csv_dag",
+    "read_write_csv_dag",
     default_args=default_args,
     description="A simple CSV read/write DAG",
     schedule=None,  # Manual trigger
@@ -68,5 +68,5 @@ with DAG(
         op_kwargs=read_csv_task.output,
     )
     
-    # set task dependencies
-    read_csv_task >> write_csv_task
+# set task dependencies
+read_csv_task >> write_csv_task
