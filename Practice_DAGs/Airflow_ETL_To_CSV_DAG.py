@@ -41,6 +41,19 @@ def read_csv(**kwargs):
     return data
 
 
+# edit function
+def edit_csv(data, **kwargs):
+
+    # define new entry
+    new_entry = {'Name': 'Pepijn', 'Age': 25, 'City': 'The Moon'}
+    # add new entry
+    data.append(new_entry)
+    
+    return data
+
+
+
+
 # default arguments for DAG
 default_args = {
     'owner': 'pepijnschouten',
@@ -64,13 +77,20 @@ with DAG(
         task_id='read_csv_task',
         python_callable=read_csv,
     )
+    
+    # edit task
+    edit_csv_task = PythonOperator(
+        task_id='edit_csv_task',
+        python_callable=edit_csv,
+        op_kwargs={"data": read_csv_task.output},  # pass optional arg
+    )
 
     # write task
     write_csv_task = PythonOperator(
         task_id='write_csv_task',
         python_callable=write_csv,
-        op_kwargs={"data": read_csv_task.output},  # pass optional arg
+        op_kwargs={"data": edit_csv_task.output},  # pass optional arg
     )
 
 # set task dependencies
-read_csv_task >> write_csv_task
+read_csv_task >> edit_csv_task >> write_csv_task
