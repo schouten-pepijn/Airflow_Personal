@@ -9,9 +9,10 @@ args = {
 }
 
 DAG = DAG(
-  dag_id='simple_xcom',
+  dag_id='simple_xcom_push',
   default_args=args,
   schedule="@daily",
+  tags=["Pepijn"]
 )
 
 def push_function(**kwargs):
