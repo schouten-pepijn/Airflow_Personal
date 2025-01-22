@@ -65,7 +65,7 @@ with DAG(
     write_csv_task = PythonOperator(
         task_id='write_csv_task',
         python_callable=write_csv,
-        op_kwargs=read_csv_task.output,
+        op_args=read_csv_task.output,
     )
     
 # set task dependencies
