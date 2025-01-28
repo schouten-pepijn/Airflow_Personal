@@ -40,17 +40,20 @@ def create_features(**kwargs):
         df
         .withColumn(
             "log_returns",
-            F.log(df["price"] / F.lag(df["price"]).over(lag_window))
+            F.log(df["price"] / F.lag(df["price"])
+                  .over(lag_window))
         )
     )
     df = df.dropna(subset=["log_returns"])
     # calculate the volatility over 10 days
-    volatility_window = Window.orderBy(F.col("date")).rowsBetween(-10, 0)
+    volatility_window = Window.orderBy(F.col("date")) \
+                            .rowsBetween(-10, 0)
     df = (
         df
         .withColumn(
             "volatility",
-            F.stddev(df["log_returns"]).over(volatility_window)
+            F.stddev(df["log_returns"])
+                .over(volatility_window)
         )
     )
     df = df.dropna(subset=["volatility"])

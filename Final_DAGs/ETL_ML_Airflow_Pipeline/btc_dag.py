@@ -20,7 +20,7 @@ with open('Apache_Airflow/Final_DAGs/ETL_ML_Airflow_Pipeline/config_file.yaml', 
 
 # some default arguments
 default_args = {
-    'owner': 'pepijnschouten',
+    'owner': config['app_owner'],
     'depends_on_past': False,
     'retries': 0,
 }
