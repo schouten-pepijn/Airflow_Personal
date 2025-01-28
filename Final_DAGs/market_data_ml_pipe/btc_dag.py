@@ -1,0 +1,62 @@
+from airflow import DAG
+from datetime import datetime
+
+from airflow.operators.python import PythonOperator
+from airflow.operators.empty import EmptyOperator
+
+from create_taskgroups import (create_api_taskgroup,
+                               create_sql_taskgroup,
+                               create_ml_taskgroup)
+
+from general_functions import (plot_data,
+                               plot_predictions)
+
+# some parameters
+conn_uri = "postgresql+psycopg2:" \
+                "//airflow_user:" \
+                    "airflow_pass@localhost:" \
+                        "5432/airflow_db"
+default_args = {
+    'owner': 'pepijnschouten',
+    'depends_on_past': False,
+    'retries': 0,
+}
+# define the DAG
+with DAG(
+    'btc_data_dag',
+    default_args=default_args,
+    description='Extract, transform, load BTC data and predict volatility with boosted tree',
+    schedule=None,  # Manual trigger
+    start_date=datetime(2022, 1, 1),
+    catchup=False,
+    tags=["Pepijn"]
+) as dag:
+    # dummy start task
+    start_task = EmptyOperator(
+        task_id='start_task'
+    )
+    # define the taskgroups
+    api_taskgroup = create_api_taskgroup("api_taskgroup")
+    sql_taskgroup = create_sql_taskgroup("sql_taskgroup")
+    ml_taskgroup = create_ml_taskgroup("ml_taskgroup")
+    # data plot task
+    plot_data_task = PythonOperator(
+        task_id='plot_data_task',
+        python_callable=plot_data,
+        op_kwargs={'conn_uri': conn_uri}
+    )
+    # prediction plot task
+    plot_predictions_task = PythonOperator(
+        task_id="plot_predictions_task",
+        python_callable=plot_predictions,
+    )
+            
+    # define flow dependencies
+    start_task >> api_taskgroup >> [sql_taskgroup, ml_taskgroup]
+    sql_taskgroup >> plot_data_task
+    ml_taskgroup >> plot_predictions_task
+    
+
+# test the DAG
+if __name__ == "__main__":
+    dag.test()
