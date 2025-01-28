@@ -8,17 +8,20 @@ import plotly.express as px
 import plotly.graph_objects as go
 import pandas as pd
 import numpy as np
+import yaml
+
+with open('Apache_Airflow/Final_DAGs/ETL_ML_Airflow_Pipeline/config_file.yaml', 'r') as f:
+    config = yaml.safe_load(f)
 
 
 def extract_data():
     # Construct the API URL for fetching OHLC data
-    url = "https://api.kraken.com/0/public/OHLC?pair=XXBTZUSD&interval=1440"
-
+    
     try:
         # Make the request to the Kraken API
         response = requests.request(
             "GET",
-            url,
+            config['kraken_url'],
             headers={'Accept': 'application/json'},
             data={},
             timeout=10
@@ -37,7 +40,7 @@ def convert_data(**kwargs):
         task_ids='api_taskgroup.extract_data_task'
     )
     # hard coded column names
-    column_names = ["date", "open", "high", "low", "close"]
+    column_names = config['column_names']
     # convert to desired json structure
     json_structure = [
         {
@@ -73,21 +76,10 @@ def validate_data(**kwargs):
         
 def create_sql_table(**kwargs):
     # connect to postgres
-    conn_uri = kwargs['conn_uri']
-    engine = create_engine(conn_uri)
-    # hard codedcreate table query
-    query = """
-            CREATE TABLE IF NOT EXISTS btc_data (
-                date DATE PRIMARY KEY,
-                open FLOAT NOT NULL,
-                high FLOAT NOT NULL,
-                low FLOAT NOT NULL,
-                close FLOAT NOT NULL
-            );
-            """
+    engine = create_engine(config['conn_uri'])
     # execute the create query
     with engine.connect() as conn:
-        conn.execute(query)
+        conn.execute(config['create_query'])
 
 
 def store_to_sql_table(**kwargs):
@@ -96,8 +88,8 @@ def store_to_sql_table(**kwargs):
         task_ids='api_taskgroup.convert_data_task'
     )
     # connect to postgres and retrieve table
-    engine = create_engine(kwargs['conn_uri'])
-    table = Table("btc_data", MetaData(), autoload_with=engine)
+    engine = create_engine(config['conn_uri'])
+    table = Table(config['table_name'], MetaData(), autoload_with=engine)
     # create the insert statement
     insert_statement = (
         insert(table)
@@ -111,10 +103,10 @@ def store_to_sql_table(**kwargs):
         
 def plot_data(**kwargs):
     # connect to postgres and retrieve table
-    df = pd.read_sql_table("btc_data", kwargs['conn_uri'])
+    df = pd.read_sql_table(config['table_name'], config['conn_uri'])
     # plot the data and write to html
-    fig = px.line(df, x='date', y='close', title=f"BTCUSD_price_data")
-    fig.write_html("btc_historical_close_price.html")
+    fig = px.line(df, x='date', y='close', title="BTCUSD_price_data")
+    fig.write_html(config['save_path_hist'])
     
 
 def plot_predictions(**kwargs):
@@ -149,7 +141,7 @@ def plot_predictions(**kwargs):
         showlegend=False
     )
     # write to html
-    fig.write_html("predictions_scatter_plot.html")
+    fig.write_html(config['save_path_pred'])
     
     
 

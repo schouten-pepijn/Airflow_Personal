@@ -34,23 +34,16 @@ def create_api_taskgroup(group_id):
 
 # create sql related tasks
 def create_sql_taskgroup(group_id):
-    conn_uri = "postgresql+psycopg2:" \
-                "//airflow_user:" \
-                    "airflow_pass@localhost:" \
-                        "5432/airflow_db"
-    
     with TaskGroup(group_id=group_id) as tq:
         # create sql database task
         create_sql_table_task = PythonOperator(
             task_id='create_sql_table_task',
-            python_callable=create_sql_table,
-            op_kwargs={'conn_uri': conn_uri}
+            python_callable=create_sql_table
         )
         # update sql database task
         store_to_sql_task = PythonOperator(
             task_id='store_to_sql_table_task',
-            python_callable=store_to_sql_table,
-            op_kwargs={'conn_uri': conn_uri}
+            python_callable=store_to_sql_table
         )
         # define flow dependencies
         create_sql_table_task >> store_to_sql_task

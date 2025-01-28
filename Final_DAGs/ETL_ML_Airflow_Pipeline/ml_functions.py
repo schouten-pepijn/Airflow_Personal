@@ -1,4 +1,5 @@
 import json
+import yaml
 from pyspark.sql import SparkSession
 import pyspark.sql.functions as F
 from pyspark.sql.window import Window
@@ -8,6 +9,10 @@ from pyspark.ml.regression import RandomForestRegressor
 from pyspark.ml.tuning import ParamGridBuilder, CrossValidator
 from pyspark.ml.evaluation import RegressionEvaluator
 
+
+# import config file
+with open('Apache_Airflow/Final_DAGs/ETL_ML_Airflow_Pipeline/config_file.yaml', 'r') as f:
+    config = yaml.safe_load(f)
 
 def create_features(**kwargs):   
     # pull the data 
@@ -52,7 +57,7 @@ def create_features(**kwargs):
     # save features to csv
     df.coalesce(1). \
         write.mode("overwrite") \
-            .csv("ml_features.csv", header=True)
+            .csv(config['save_path_features'], header=True)
 
 
 def train_eval_model(**kwargs):
@@ -65,13 +70,13 @@ def train_eval_model(**kwargs):
     )
     # read the features csv
     df = spark.read.csv(
-        "ml_features.csv"
-        , header=True,
+        config['save_path_features'],
+        header=True,
         inferSchema=True
     )
     # create vector assembler
     assembler = VectorAssembler(
-        inputCols=["price", "log_returns"],
+        inputCols=config['rf_features'],
         outputCol="features"
     )
     df = assembler.transform(df)
@@ -98,9 +103,9 @@ def train_eval_model(**kwargs):
     # parameter grid for grid search
     param_grid = (
         ParamGridBuilder()
-        .addGrid(rf.numTrees, [20, 50])
-        .addGrid(rf.maxDepth, [5, 10])
-        .addGrid(rf.maxBins, [32, 64])
+        .addGrid(rf.numTrees, [10, 20, 50])
+        .addGrid(rf.maxDepth, [5, 10, 15])
+        .addGrid(rf.maxBins, [16, 32, 64])
         .build()
     )
     # cross validation 
@@ -108,7 +113,7 @@ def train_eval_model(**kwargs):
         estimator=pipeline,
         estimatorParamMaps=param_grid,
         evaluator=evaluator,
-        numFolds=5
+        numFolds=5,
     )
     cv_model = cv.fit(train_data)
     best_model = cv_model.bestModel

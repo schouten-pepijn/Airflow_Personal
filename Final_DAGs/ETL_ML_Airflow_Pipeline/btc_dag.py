@@ -1,6 +1,7 @@
-from airflow import DAG
+import yaml
 from datetime import datetime
 
+from airflow import DAG
 from airflow.operators.python import PythonOperator
 from airflow.operators.empty import EmptyOperator
 
@@ -11,11 +12,13 @@ from create_taskgroups import (create_api_taskgroup,
 from general_functions import (plot_data,
                                plot_predictions)
 
-# some parameters
-conn_uri = "postgresql+psycopg2:" \
-                "//airflow_user:" \
-                    "airflow_pass@localhost:" \
-                        "5432/airflow_db"
+
+
+# import config file
+with open('Apache_Airflow/Final_DAGs/ETL_ML_Airflow_Pipeline/config_file.yaml', 'r') as f:
+    config = yaml.safe_load(f)
+
+# some default arguments
 default_args = {
     'owner': 'pepijnschouten',
     'depends_on_past': False,
@@ -23,13 +26,13 @@ default_args = {
 }
 # define the DAG
 with DAG(
-    'btc_data_dag',
+    config['app_name'],
     default_args=default_args,
-    description='Extract, transform, load BTC data and predict volatility with boosted tree',
+    description=config['app_description'],
     schedule=None,  # Manual trigger
     start_date=datetime(2022, 1, 1),
     catchup=False,
-    tags=["Pepijn"]
+    tags=[config['app_tag']]
 ) as dag:
     # dummy start task
     start_task = EmptyOperator(
@@ -42,8 +45,7 @@ with DAG(
     # data plot task
     plot_data_task = PythonOperator(
         task_id='plot_data_task',
-        python_callable=plot_data,
-        op_kwargs={'conn_uri': conn_uri}
+        python_callable=plot_data
     )
     # prediction plot task
     plot_predictions_task = PythonOperator(
